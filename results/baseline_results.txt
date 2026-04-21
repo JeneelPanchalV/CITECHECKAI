@@ -1,0 +1,46 @@
+
+=======================================================
+DOCGUARD AI — RAGAS EVALUATION RESULTS (BASELINE)
+=======================================================
+Date: 2026-04-17
+Model: llama3.1:8b (local, Ollama)
+Embeddings: all-MiniLM-L6-v2
+PDFs evaluated: 2
+Total Q&A pairs: 30
+
+--- Overall (mean +/- std) ---
+faithfulness               0.720  +-  0.195
+answer_relevancy           0.720  +-  0.181
+context_precision          0.637  +-  0.331
+
+--- Guard analysis ---
+Total questions   : 30
+Answered (OK)     : 29   (96.7%)
+Refused by guard  : 1    (3.3%)
+
+--- Per-PDF breakdown ---
+                                     faithfulness  answer_relevancy  context_precision
+3597503.3639187.pdf                         0.727             0.733              0.467
+fraudulent_job_messages_samples.pdf         0.713             0.707              0.807
+
+--- Lowest faithfulness questions (bottom 5) ---
+  [q005] faith=0.200  guard=OK
+           What is the Reshipping scam and what monthly salary does it adver...
+  [q018] faith=0.200  guard=OK
+           How many participants were in the GILT user study?...
+  [q006] faith=0.500  guard=OK
+           What does the safety checklist say about legitimate companies and...
+  [q007] faith=0.500  guard=OK
+           What does the safety checklist recommend doing to verify a suspic...
+  [q013] faith=0.500  guard=OK
+           What items is the candidate supposedly being given money to purch...
+
+--- Notes ---
+- context_precision is lower for the longer PDF (13 pages, 23 chunks)
+  vs the shorter PDF (2 pages, 2 chunks), confirming document length
+  affects retrieval precision.
+- Guard refusal rate (3.3%) suggests thresholds are currently permissive.
+  Ablation study (Step 3) will explore tighter configurations.
+- Evaluation used direct Ollama API calls (no LangChain middleware)
+  to avoid timeout issues with parallel RAGAS jobs.
+=======================================================
