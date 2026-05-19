@@ -583,9 +583,9 @@ MIT License — see [LICENSE](LICENSE) for full text.
 <div align="center">
 
 **Jeneel Panchal**
-M.S. Artificial Intelligence — University of Bridgeport
+M.S. Artificial Intelligence 
 
 [![GitHub](https://img.shields.io/badge/GitHub-JeneelPanchalV-181717?style=flat-square&logo=github)](https://github.com/JeneelPanchalV)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-jeneelpanchal-0A66C2?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/jeneelpanchal)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-jeneelpanchal-0A66C2?style=flat-square&logo=linkedin)](www.linkedin.com/in/jeneel-panchal-lu767ffy)
 
 </div>
