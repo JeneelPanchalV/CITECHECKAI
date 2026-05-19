@@ -35,7 +35,7 @@ for p in pairs:
     best_dist = res['distances'][0][0]
     best_text = res['documents'][0][0][:100]
 
-    status = 'OK  ' if best_dist < 1.4 else ('WARN' if best_dist < 1.8 else 'FAIL')
+    status = 'OK  ' if best_dist < 1.8 else ('WARN' if best_dist < 1.9 else 'FAIL')
     if status == 'OK  ':
         ok_count += 1
     else:

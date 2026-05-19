@@ -13,7 +13,7 @@ for m in metrics:
 
 print('\n--- Guard analysis ---')
 total   = len(df)
-ok      = (df['guard_status'] == 'OK').sum()
+ok      = (df['status'] == 'answered').sum()
 refused = total - ok
 print(f'Total questions   : {total}')
 print(f'Answered (OK)     : {ok}   ({100*ok/total:.1f}%)')
@@ -24,9 +24,9 @@ per_pdf = df.groupby('pdf')[metrics].mean().round(3)
 print(per_pdf.to_string())
 
 print('\n--- Lowest faithfulness questions (bottom 5) ---')
-low = df.nsmallest(5, 'faithfulness')[['id', 'question', 'faithfulness', 'guard_status']]
+low = df.nsmallest(5, 'faithfulness')[['id', 'question', 'faithfulness', 'status']]
 for _, row in low.iterrows():
-    print(f'  [{row["id"]}] faith={row["faithfulness"]:.3f}  guard={row["guard_status"]}')
+    print(f'  [{row["id"]}] faith={row["faithfulness"]:.3f}  status={row["status"]}')
     print(f'           {row["question"][:65]}...')
 
 print('\n' + '=' * 55)

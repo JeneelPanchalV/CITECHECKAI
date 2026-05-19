@@ -18,9 +18,10 @@ upsert_chunks(chunks, embs, doc_name=PDF_PATH.split("/")[-1])
 print(f'Indexed {len(chunks)} chunks from {len(pages)} pages.')
 
 print(f'\nQuestion: {QUESTION}')
-answer, evidence, guard = answer_question(QUESTION)
+answer, evidence, status, reason = answer_question(QUESTION)
 
-print(f'\nGuard status : {guard}')
+print(f'\nStatus : {status}')
+print(f'Reason : {reason}')
 print(f'Answer       : {answer[:300]}')
 print(f'\nTop evidence:')
 for i, e in enumerate(evidence[:3], 1):

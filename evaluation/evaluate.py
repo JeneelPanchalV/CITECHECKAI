@@ -101,6 +101,18 @@ for p in pairs:
     if pdf_path in indexed:
         continue
     print(f"Indexing: {p['pdf']}...")
+    # Clear the collection before indexing this PDF
+    try:
+        import chromadb
+        from chromadb.config import Settings as CSettings
+        from core.config import CHROMA_DIR
+        _c = chromadb.PersistentClient(
+            path=CHROMA_DIR,
+            settings=CSettings(anonymized_telemetry=False)
+        )
+        _c.delete_collection("citecheck")
+    except Exception:
+        pass  # Collection may not exist on first run
     pages  = load_pdf_pages(pdf_path)
     chunks = chunk_pages(pages)
     embs   = embed_texts([c.text for c in chunks])
@@ -113,11 +125,11 @@ records = []
 for i, p in enumerate(pairs):
     print(f"[{i+1:>3}/{len(pairs)}] {p['question'][:65]}...")
     try:
-        answer, evidence, guard = answer_question(p["question"])
+        answer, evidence, status, reason = answer_question(p["question"])
         contexts = [e.text for e in evidence]
     except Exception as ex:
         print(f"        ERROR: {ex}")
-        answer, contexts, guard = "", [], f"ERROR: {ex}"
+        answer, contexts, status, reason = "", [], "error", f"ERROR: {ex}"
 
     print(f"         Scoring faithfulness...")
     faith = score_faithfulness(answer, contexts)
@@ -133,7 +145,8 @@ for i, p in enumerate(pairs):
         "question":          p["question"],
         "answer":            answer,
         "ground_truth":      p["ideal_answer"],
-        "guard_status":      guard,
+        "status":            status,
+        "reason":            reason,
         "source_page":       p["source_page"],
         "faithfulness":      faith,
         "answer_relevancy":  relevancy,
@@ -149,5 +162,5 @@ for col in ["faithfulness", "answer_relevancy", "context_precision"]:
     vals = df[col].dropna()
     mean = vals.mean() if len(vals) else float("nan")
     print(f"{col:<25}  {mean:.3f}  ({len(vals)}/{len(df)} scored)")
-refused = (df["guard_status"] != "OK").sum()
+refused = (df["status"] != "answered").sum()
 print(f"Guard refusals          {refused}/{len(df)} ({100*refused/len(df):.1f}%)")

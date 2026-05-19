@@ -4,3 +4,9 @@ __pycache__/
 .env
 storage/uploads/
 storage/chroma/
+
+# Academic submission artifacts (local-only)
+1268081_DocGuard AI.zip
+1268081_DocGuard AI_Report.pdf
+*.zip
+*_Report.pdf

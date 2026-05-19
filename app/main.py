@@ -1,5 +1,10 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import os
 import uuid
+import html
 import streamlit as st
 
 from core.config import CHROMA_DIR
@@ -167,6 +172,7 @@ html, body, .stApp {
 for key, default in {
     "pdf_summary":     None,
     "last_pdf_name":   None,
+    "last_upload_path": None,
     "summary_visible": False,
     "indexed":         False,
     "page_count":      0,
@@ -234,7 +240,7 @@ if pdf is not None:
     st.markdown(f"""
     <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;
                 color:#7a8fa6;margin:0.5rem 0 1rem;letter-spacing:0.04em;">
-        ◆ &nbsp;{pdf.name}
+        ◆ &nbsp;{html.escape(pdf.name)}
     </div>
     """, unsafe_allow_html=True)
 
@@ -250,6 +256,14 @@ if pdf is not None:
             _c.delete_collection("citecheck")
         except Exception:
             pass
+        # Delete the previous uploaded file if any
+        if st.session_state.get("last_upload_path"):
+            try:
+                old_path = st.session_state["last_upload_path"]
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            except Exception:
+                pass  # Best-effort cleanup; don't crash on permission issues
         st.session_state["last_pdf_name"]   = pdf.name
         st.session_state["pdf_summary"]     = None
         st.session_state["summary_visible"] = False
@@ -264,6 +278,7 @@ if pdf is not None:
         save_path = os.path.join(UPLOAD_DIR, f"{file_id}_{pdf.name}")
         with open(save_path, "wb") as f:
             f.write(pdf.getbuffer())
+        st.session_state["last_upload_path"] = save_path
 
         st.success(f"Saved · {save_path}")
         pages = load_pdf_pages(save_path)
@@ -282,7 +297,7 @@ if pdf is not None:
                     st.markdown(f"""
                     <div class="dg-chunk">
                         <div class="dg-chunk-id">CHUNK {c.chunk_id} · PAGE {c.page}</div>
-                        <div class="dg-chunk-text">{c.text[:280]}{'…' if len(c.text)>280 else ''}</div>
+                        <div class="dg-chunk-text">{html.escape(c.text[:280])}{'…' if len(c.text)>280 else ''}</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -318,7 +333,7 @@ DOCUMENT EXCERPTS:
 
 SUMMARY:"""
 
-                    summary = ollama_generate(prompt)
+                    summary, _ = ollama_generate(prompt)
                     st.session_state["pdf_summary"] = summary
 
                 except Exception as ex:
@@ -329,7 +344,7 @@ SUMMARY:"""
                     st.markdown(f"""
                     <div class="dg-page-preview">
                         <div class="dg-page-num">Page {p.page}</div>
-                        <div class="dg-page-text">{p.text[:380]}{'…' if len(p.text)>380 else ''}</div>
+                        <div class="dg-page-text">{html.escape(p.text[:380])}{'…' if len(p.text)>380 else ''}</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -379,7 +394,7 @@ if st.session_state["indexed"]:
         st.markdown(f"""
         <div class="dg-summary-revealed">
             <div class="dg-summary-label">◆ &nbsp;AI-Generated Summary</div>
-            {st.session_state["pdf_summary"]}
+            {html.escape(st.session_state["pdf_summary"])}
         </div>
         """, unsafe_allow_html=True)
         if st.button("↑  Collapse Summary", key="hide_summary"):
@@ -413,7 +428,7 @@ if st.session_state["indexed"]:
             # Return cached summary — no LLM call needed
             st.markdown(
                 '<div style="margin-bottom:1rem;">'
-                '<span class="dg-badge dg-badge-ok">● GUARD PASSED</span>'
+                '<span class="dg-badge dg-badge-ok">● ANSWERED</span>'
                 '</div>',
                 unsafe_allow_html=True
             )
@@ -425,20 +440,27 @@ if st.session_state["indexed"]:
                 unsafe_allow_html=True
             )
             st.markdown(
-                f'<div class="dg-answer">{st.session_state["pdf_summary"]}</div>',
+                f'<div class="dg-answer">{html.escape(st.session_state["pdf_summary"])}</div>',
                 unsafe_allow_html=True
             )
 
         else:
             # Full RAG pipeline
             with st.spinner("Retrieving evidence and reasoning…"):
-                answer, evidence, guard_status = answer_question(question)
+                answer, evidence, status, reason = answer_question(question)
 
-            badge = (
-                '<span class="dg-badge dg-badge-ok">● GUARD PASSED</span>'
-                if guard_status == "OK" else
-                '<span class="dg-badge dg-badge-warn">⚠ GUARD REFUSED</span>'
-            )
+            # Map status to badge HTML
+            if status == "answered":
+                badge = '<span class="dg-badge dg-badge-ok">● ANSWERED</span>'
+            elif status == "guard_refused":
+                badge = '<span class="dg-badge dg-badge-warn">⚠ GUARD REFUSED</span>'
+            elif status == "llm_refused":
+                badge = '<span class="dg-badge dg-badge-warn">○ NO ANSWER FOUND</span>'
+            elif status == "validator_rejected":
+                badge = '<span class="dg-badge dg-badge-warn">⊘ VALIDATION FAILED</span>'
+            else:
+                badge = '<span class="dg-badge dg-badge-warn">⚠ UNKNOWN</span>'
+
             st.markdown(
                 f'<div style="margin-bottom:1rem;">{badge}</div>',
                 unsafe_allow_html=True
@@ -451,7 +473,7 @@ if st.session_state["indexed"]:
                 unsafe_allow_html=True
             )
             st.markdown(
-                f'<div class="dg-answer">{answer}</div>',
+                f'<div class="dg-answer">{html.escape(answer)}</div>',
                 unsafe_allow_html=True
             )
 
@@ -470,16 +492,17 @@ if st.session_state["indexed"]:
                     <div class="dg-evidence-meta">
                         [{i}] &nbsp;{doc} &nbsp;·&nbsp; Page {e.page} &nbsp;·&nbsp; dist={e.distance:.3f}
                     </div>
-                    <div class="dg-evidence-text">{snippet}</div>
+                    <div class="dg-evidence-text">{html.escape(snippet)}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-            if guard_status != "OK":
+            # Show reason for any non-answered state
+            if status != "answered":
                 st.markdown(f"""
                 <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;
                             color:#ffb340;margin-top:1rem;padding:0.75rem 1rem;
                             background:rgba(255,179,64,0.06);
                             border:1px solid rgba(255,179,64,0.2);border-radius:8px;">
-                    ⚠ &nbsp;{guard_status}
+                    ⚠ &nbsp;{html.escape(reason)}
                 </div>
                 """, unsafe_allow_html=True)
