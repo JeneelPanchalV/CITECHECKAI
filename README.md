@@ -25,11 +25,17 @@
 
 ---
 
-## 🚀 Live Demo
+## 🎬 Demo
 
-> 🔗 **Live deployment coming soon** — link will be added here once hosted.
+<div align="center">
+  <img src="docs/demo.gif" alt="DocGuard AI demo — answering a question with cited evidence" width="900"/>
+  <br/>
+  <em>DocGuard AI extracting a monetary field from a parking ticket PDF, with page-level citation and source evidence panel.</em>
+</div>
 
-Until then, the [Quickstart](#quickstart) section walks through a 5-minute local setup.
+<br/>
+
+
 
 ---
 
@@ -71,7 +77,7 @@ Every answer includes **page-level citations** linking back to the exact chunk u
 
 ## Table of Contents
 
-- [Live Demo](#-live-demo)
+- [Demo](#-demo)
 - [About](#about)
   - [What makes it different](#what-makes-it-different)
   - [Built for](#built-for)
@@ -456,6 +462,9 @@ DocGuardAI/
 │   ├── validate_dataset.py      # Schema + PDF existence checks for qa_pairs.json
 │   ├── preview_retrieval.py     # Spot-check retrieval quality for dataset questions
 │   └── pdfs/                    # PDF files referenced by qa_pairs.json
+│
+├── docs/
+│   └── demo.gif                 # Live demo of the question-answer flow
 │
 ├── storage/
 │   ├── uploads/                 # Active uploaded PDF (auto-cleaned on new upload)
