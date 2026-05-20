@@ -1,8 +1,15 @@
 <div align="center">
 
-# DocGuard AI
+```
+██████╗  ██████╗  ██████╗ ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗      █████╗ ██╗
+██╔══██╗██╔═══██╗██╔════╝██╔════╝██║   ██║██╔══██╗██╔══██╗██╔══██╗    ██╔══██╗██║
+██║  ██║██║   ██║██║     ██║  ███╗██║   ██║███████║██████╔╝██║  ██║    ███████║██║
+██║  ██║██║   ██║██║     ██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║    ██╔══██║██║
+██████╔╝╚██████╔╝╚██████╗╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝    ██║  ██║██║
+╚═════╝  ╚═════╝  ╚═════╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝     ╚═╝  ╚═╝╚═╝
 
-**Evidence-grounded PDF question answering with multi-layer hallucination defense.**
+         EVIDENCE-GROUNDED PDF Q&A · HALLUCINATION DEFENSE · LOCAL-FIRST
+```
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.x-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io)
@@ -12,20 +19,68 @@
 [![Platform](https://img.shields.io/badge/Platform-macOS%20Apple%20Silicon-555555?style=flat-square&logo=apple)](https://www.apple.com/mac/)
 [![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-6366F1?style=flat-square)]()
 
-<br/>
-
 > A local-first RAG system that **refuses to hallucinate**. Every answer is grounded in retrieved evidence with page-level citations. When evidence is insufficient or an answer fails type-validation, the system refuses rather than fabricates.
 
 </div>
 
 ---
 
+## 🚀 Live Demo
+
+> 🔗 **Live deployment coming soon** — link will be added here once hosted.
+
+Until then, the [Quickstart](#quickstart) section walks through a 5-minute local setup.
+
+---
+
+## About
+
+**DocGuard AI** is an evidence-grounded question answering system for PDF documents, built around a single principle: **the system should refuse to answer when it doesn't have enough evidence, instead of fabricating a plausible-sounding response.**
+
+Most off-the-shelf RAG pipelines will happily generate confident-looking answers even when the retrieved context is irrelevant, contradictory, or missing entirely. This is the fundamental hallucination problem — and it's why people don't trust LLMs with real documents like contracts, medical records, financial statements, or legal filings.
+
+DocGuard AI addresses this with a **three-layer hallucination defense**:
+
+1. **Retrieval Guard** — Before the LLM ever sees the query, the system inspects the retrieved chunks. If semantic similarity is too weak or the total evidence is too thin, the system refuses immediately with a clear reason.
+2. **Type-aware System Prompt** — The LLM is constrained by explicit rules about what valid answers look like for each question type (names, dates, monetary amounts, IDs). It's instructed to refuse — using a fixed refusal phrase — when the evidence doesn't actually contain the answer.
+3. **Conditional Validator** — When the question asks for an identity-like value (names, defendants, parties) and the LLM returns something that looks suspiciously like a code or ID, a second LLM call validates whether the answer is type-consistent with what was asked.
+
+Every answer includes **page-level citations** linking back to the exact chunk used as evidence, so you can verify the source in one click.
+
+### What makes it different
+
+- **Local-first.** Runs entirely on your machine via [Ollama](https://ollama.com) (llama3.1:8b) and a local [ChromaDB](https://www.trychroma.com) instance. No documents leave your computer. No API keys. No cloud calls.
+- **Honest refusals over confident hallucinations.** The system tells you *why* it refused — weak retrieval, missing evidence, or failed validation — in four distinct UI states.
+- **Calibrated, not hand-wavy.** Distance thresholds are empirically tuned to the embedding model (`all-MiniLM-L6-v2`), not picked from a blog post.
+- **Production-grade hygiene.** HTML-escaped user content, ChromaDB client singleton, absolute path resolution, automatic upload cleanup, safe-k clamping — the kind of details that make the difference between a demo and a tool.
+
+### Built for
+
+- People who care more about being **right** than about looking smart.
+- Anyone who's been burned by an LLM confidently making up a number from a document.
+- Engineers evaluating whether RAG can be trusted in production workflows.
+
+### Use cases
+
+- **Legal & compliance** — Querying contracts, filings, regulatory documents where wrong answers carry real consequences.
+- **Financial documents** — Extracting specific figures, dates, and identifiers from receipts, statements, and reports.
+- **Research** — Searching across academic PDFs with verifiable citations.
+- **Personal document Q&A** — Anything from a parking ticket to a 200-page user manual, without sending it to OpenAI.
+
+---
+
 ## Table of Contents
 
+- [Live Demo](#-live-demo)
+- [About](#about)
+  - [What makes it different](#what-makes-it-different)
+  - [Built for](#built-for)
+  - [Use cases](#use-cases)
 - [The Problem](#the-problem)
 - [Architecture](#architecture)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
+- [Results](#results)
 - [Performance](#performance)
 - [Quickstart](#quickstart)
   - [Prerequisites](#1-prerequisites)
@@ -54,7 +109,7 @@
 
 Generic RAG systems share a common failure mode: when retrieval returns ambiguous or partial evidence, the underlying LLM confidently produces an answer anyway. For document QA in privacy-sensitive contexts — legal, financial, medical — **a wrong answer is worse than no answer**.
 
-DocGuard AI is built around the opposite default: **refuse first, answer only when the evidence is unambiguous.** The system distinguishes between three distinct failure modes and surfaces each one transparently to the user, with a human-readable reason for every refusal.
+DocGuard AI distinguishes between three distinct failure modes and surfaces each one transparently to the user, with a human-readable reason for every refusal. This makes the system's epistemic state legible: you always know whether a missing answer means *"the document doesn't cover this"*, *"the evidence exists but isn't precise enough"*, or *"the extracted value doesn't pass type-validation"*.
 
 ---
 
@@ -145,6 +200,57 @@ DocGuard AI is built around the opposite default: **refuse first, answer only wh
 | LLM model | llama3.1:8b | — |
 | Language | Python | 3.10+ |
 | Environment | Conda | — |
+
+---
+
+## Results
+
+The system is verified against a functional test suite covering all four response states. Each test exercises a specific layer of the hallucination defense and confirms the correct outcome — including correct *refusals* for out-of-document queries.
+
+**Test document:** Single-page parking ticket payment receipt (positional table layout, no ruled cell borders, mixed currency / date / identifier fields).
+
+**Embedding model:** `all-MiniLM-L6-v2` · **LLM:** `llama3.1:8b` via Ollama · **Hardware:** Apple Silicon (M-series)
+
+### Functional verification
+
+| # | Question | Expected | Actual | Status | Layer Exercised |
+|---|----------|----------|--------|--------|-----------------|
+| 1 | How much is the service fee? | `$1.50` | `$1.50 [1]` | ✅ `ANSWERED` | L2 — positional table parsing |
+| 2 | What is the penalty amount? | `$50.00` | `$50.00 [1]` | ✅ `ANSWERED` | L2 — currency type rule |
+| 3 | What is the confirmation number? | `284790900` | `284790900 [1]` | ✅ `ANSWERED` | L2 — ID type rule (6+ digits) |
+| 4 | When was the payment made? | `05/11/2026` | `05/11/2026 [1]` | ✅ `ANSWERED` | L2 — date type rule |
+| 5 | What is the defendant's name? | *Refusal* (no name in document) | *Refusal* (correctly identified missing field) | ✅ `NO ANSWER FOUND` | L2 + L3 — type self-refusal + validator backstop |
+| 6 | What is photosynthesis? | *Refusal* (off-topic) | *Refusal* — `distance 1.94 > 1.8` | ✅ `GUARD REFUSED` | L1 — retrieval distance threshold |
+
+### Summary
+
+| Metric | Value |
+|--------|-------|
+| **Correct answers (in-document factual)** | 4 / 4 (100%) |
+| **Correct refusals (out-of-document)** | 2 / 2 (100%) |
+| **False answers (hallucinations)** | 0 |
+| **False refusals (over-refusal)** | 0 |
+| **Layers verified** | L1, L2, L3 |
+| **States covered** | `ANSWERED`, `NO ANSWER FOUND`, `GUARD REFUSED` |
+
+### What this demonstrates
+
+- **Layer 1 works:** Off-topic queries (`photosynthesis` on a parking ticket) are refused at the retrieval stage with a quantified reason (distance `1.94 > 1.8`), before the LLM is invoked.
+- **Layer 2 works on type extraction:** The LLM correctly extracts currency, date, and identifier fields from a positional table layout where pypdf produces flat space-separated text — without misalignment.
+- **Layer 2 + 3 work on refusal:** The "defendant's name" question is correctly refused because the document contains no `Name:` field — even though name-shaped substrings exist elsewhere on the page.
+- **Zero hallucinations across the suite** despite the document being structurally ambiguous (sparse table, blank cells, multiple plausible-looking identifier strings).
+
+### What this does *not* yet demonstrate
+
+This is functional verification, not statistical evaluation. A larger benchmark is planned:
+
+- [ ] **Multi-document corpus** — 50+ PDFs across legal, financial, and academic domains
+- [ ] **RAGAS metrics** — faithfulness, answer relevancy, context precision, context recall
+- [ ] **Refusal precision/recall** — measuring false-refusal rate on legitimate but hard queries
+- [ ] **Latency distribution** — p50 / p95 / p99 across query types
+- [ ] **Comparison baseline** — same questions against a vanilla RAG pipeline (no guards) to quantify hallucination reduction
+
+The full evaluation pipeline ([`evaluation/`](#evaluation-pipeline)) is implemented and ready to score these metrics once the larger dataset is assembled.
 
 ---
 
@@ -492,6 +598,7 @@ pypdf page numbering starts at 1 and maps to the physical page order in the PDF 
 | English-language tuned | Type rules calibrated for English | Locale-aware type expectations |
 | Single-user concurrency | No multi-tenant support | Out of scope for local-first design |
 | Latency-bound by local LLM | 3–14 s per query | Quantization / smaller model option |
+| Functional test suite is small (n=6) | Statistical claims (precision/recall) require larger corpus | Multi-document RAGAS evaluation in roadmap |
 
 ---
 
@@ -501,11 +608,13 @@ pypdf page numbering starts at 1 and maps to the physical page order in the PDF 
 - [ ] OCR support for scanned PDFs (Tesseract integration)
 - [ ] `.env.example` committed to repository
 - [ ] `requirements.txt` with pinned versions
+- [ ] Live deployment (Streamlit Community Cloud / Hugging Face Spaces)
 
 ### Medium-term
 - [ ] Multi-document sessions with document-scoped ChromaDB namespacing
 - [ ] Source-highlighting in retrieved evidence (UI)
 - [ ] Answer confidence score surfaced alongside status badge
+- [ ] Multi-document RAGAS benchmark — 50+ PDFs across domains
 
 ### Long-term
 - [ ] Retrieval evaluation metrics dashboard (MRR, NDCG, faithfulness)
